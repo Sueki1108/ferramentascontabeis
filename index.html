@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processador de Planilhas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to start to allow scrolling */
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 800px;
+            width: 100%;
+            margin-top: 2rem;
+        }
+        .file-input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background-color: #f9fafb;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .file-input-wrapper:hover {
+            border-color: #9ca3af;
+        }
+        .file-input-wrapper input[type="file"] {
+            display: none; /* Hide default file input */
+        }
+        .file-input-wrapper .button-browse {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem 0 0 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .file-input-wrapper .button-browse:hover {
+            background-color: #4338ca; /* Indigo 700 */
+        }
+        .file-input-wrapper .file-name {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            color: #4b5563;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .process-button {
+            background-color: #10b981; /* Emerald 500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .process-button:hover {
+            background-color: #059669; /* Emerald 600 */
+        }
+        .explanation-box {
+            background-color: #e0f2fe; /* Light blue */
+            border-left: 4px solid #38b2ac; /* Teal border */
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 2rem;
+            color: #0c4a6e;
+        }
+        .explanation-box p {
+            margin-bottom: 0.5rem;
+        }
+        .explanation-box p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Processador de Planilhas</h1>
+
+        <p class="text-gray-600 mb-8 text-center">
+            Faça o upload das suas planilhas OpenDocument Spreadsheet (.ods) ou Excel (.xlsx) para processamento.
+        </p>
+
+        <div class="space-y-6">
+            <!-- Input para Contas Recebidas -->
+            <div>
+                <label for="contasRecebidas" class="file-input-label">Planilha de Contas Recebidas:</label>
+                <div class="file-input-wrapper">
+                    <button type="button" class="button-browse" onclick="document.getElementById('contasRecebidas').click()">Escolher Arquivo</button>
+                    <input type="file" id="contasRecebidas" accept=".ods,.xlsx" onchange="updateFileName('contasRecebidas')">
+                    <span id="contasRecebidasFileName" class="file-name">Nenhum arquivo selecionado</span>
+                </div>
+            </div>
+
+            <!-- Input para Listagem de Saídas -->
+            <div>
+                <label for="listagemSaidas" class="file-input-label">Planilha de Listagem de Saídas:</label>
+                <div class="file-input-wrapper">
+                    <button type="button" class="button-browse" onclick="document.getElementById('listagemSaidas').click()">Escolher Arquivo</button>
+                    <input type="file" id="listagemSaidas" accept=".ods,.xlsx" onchange="updateFileName('listagemSaidas')">
+                    <span id="listagemSaidasFileName" class="file-name">Nenhum arquivo selecionado</span>
+                </div>
+            </div>
+
+            <!-- Input para Parcelas em Aberto -->
+            <div>
+                <label for="parcelasAberto" class="file-input-label">Planilha de Parcelas em Aberto:</label>
+                <div class="file-input-wrapper">
+                    <button type="button" class="button-browse" onclick="document.getElementById('parcelasAberto').click()">Escolher Arquivo</button>
+                    <input type="file" id="parcelasAberto" accept=".ods,.xlsx" onchange="updateFileName('parcelasAberto')">
+                    <span id="parcelasAbertoFileName" class="file-name">Nenhum arquivo selecionado</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center">
+            <button type="button" class="process-button" onclick="processFiles()">Processar Planilhas</button>
+        </div>
+
+        <div id="outputMessage" class="mt-6 p-4 rounded-lg text-center" style="display:none;"></div>
+
+    </div>
+
+    <script>
+        // Função para atualizar o nome do arquivo exibido
+        function updateFileName(inputId) {
+            const input = document.getElementById(inputId);
+            const fileNameSpan = document.getElementById(inputId + 'FileName');
+            if (input.files.length > 0) {
+                fileNameSpan.textContent = input.files[0].name;
+            } else {
+                fileNameSpan.textContent = 'Nenhum arquivo selecionado';
+            }
+        }
+
+        // Função para simular o processamento dos arquivos
+        function processFiles() {
+            const contasRecebidas = document.getElementById('contasRecebidas').files[0];
+            const listagemSaidas = document.getElementById('listagemSaidas').files[0];
+            const parcelasAberto = document.getElementById('parcelasAberto').files[0];
+            const outputMessage = document.getElementById('outputMessage');
+
+            // Verifica se todos os arquivos foram selecionados
+            if (!contasRecebidas || !listagemSaidas || !parcelasAberto) {
+                outputMessage.style.display = 'block';
+                outputMessage.className = 'mt-6 p-4 rounded-lg text-center bg-red-100 text-red-700';
+                outputMessage.textContent = 'Por favor, selecione todas as três planilhas antes de processar.';
+                return;
+            }
+
+            // Simula o envio para o backend
+            outputMessage.style.display = 'block';
+            outputMessage.className = 'mt-6 p-4 rounded-lg text-center bg-blue-100 text-blue-700';
+            outputMessage.textContent = 'Arquivos selecionados! Em um ambiente de servidor, eles seriam agora processados pelo código Python.';
+
+            // Aqui você faria uma requisição (fetch API) para o seu servidor de backend
+            // Exemplo conceitual (não funcional sem um backend real):
+            /*
+            const formData = new FormData();
+            formData.append('contas_recebidas', contasRecebidas);
+            formData.append('listagem_saidas', listagemSaidas);
+            formData.append('parcelas_aberto', parcelasAberto);
+
+            fetch('/processar_planilhas', { // Este seria o endpoint do seu servidor
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob()) // Ou response.json() dependendo do que o backend retorna
+            .then(blob => {
+                // Lógica para download do arquivo processado
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'Importar_Atualizado.xlsx'; // Nome do arquivo de saída
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                outputMessage.className = 'mt-6 p-4 rounded-lg text-center bg-green-100 text-green-700';
+                outputMessage.textContent = 'Planilha processada e download iniciado!';
+            })
+            .catch(error => {
+                console.error('Erro ao processar arquivos:', error);
+                outputMessage.className = 'mt-6 p-4 rounded-lg text-center bg-red-100 text-red-700';
+                outputMessage.textContent = 'Ocorreu um erro ao processar as planilhas.';
+            });
+            */
+        }
+    </script>
+</body>
+</html>
